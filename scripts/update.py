@@ -29,3 +29,4 @@ for k in ('programs','scholarships'):
             except Exception as e: it['check']='extract failed'
 d['meta']['updated']=today
 json.dump(d,open(F,'w'),ensure_ascii=False,separators=(',',':'))
+
