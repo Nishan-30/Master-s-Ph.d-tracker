@@ -18,7 +18,7 @@ for k in ('programs','scholarships'):
         except Exception as e: it['check']='fetch failed'; continue
         h=hashlib.sha256(txt.encode()).hexdigest()[:16]
         if it.get('hash') and it['hash']!=h: it['changed']=today
-        need=(it.get('changed')==today) or not it.get('hash')
+        need=(it.get('changed')==today) or not it.get('deadline') or not it.get('hash')
         it['hash']=h; it['checked']=today; it['check']='ok'
         if key and need:
             try:
