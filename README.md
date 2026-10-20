@@ -1,7 +1,5 @@
-# Masters Abroad Tracker
-1. Create a GitHub repo, upload everything in this folder (keep `docs/`, `scripts/`, `.github/`).
-2. Settings > Pages > Source: `main` branch, folder `/docs`. Your site goes live at https://USERNAME.github.io/REPO/
-3. (Optional, for auto-extraction of deadlines/tests) Settings > Secrets and variables > Actions > New secret `ANTHROPIC_API_KEY`.
-4. Actions tab > "daily-update" > Run workflow once to test. It then runs every day at 02:00 UTC.
-Without the key, it only detects official-page changes (shows "page changed"). Deadlines still count down automatically in the browser.
-Add universities by appending to `docs/data.json` (same fields as existing entries) - the checker picks them up next run.
+# Masters abroad tracker
+Folder layout: docs/index.html, docs/data.json, scripts/update.py, .github/workflows/update.yml
+Pages: Settings > Pages > Deploy from branch > main > /docs.
+Actions: runs daily (02:00 UTC). No API key needed. It fetches each official page, flags changes, and fills a blank deadline or test score only when the page text states it clearly. Those values are labelled "Auto-detected - verify".
+Limit: many links are department home pages, so the checker often finds nothing there. Replace a link in docs/data.json with the exact admissions page and the checker will start reading it.
