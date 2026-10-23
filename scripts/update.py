@@ -46,5 +46,11 @@ for k in ('programs','scholarships'):
         if k=='programs':
             for f,v in tests(txt).items():
                 if str(it.get(f,'Check')).startswith('Check'): it[f]=v; it['conf']=it['conf'] if it['conf'].startswith(('High','Medium')) else 'Auto-detected - verify'
+REC=re.compile(r'(accepting|recruiting|seeking|looking for|hiring|openings?|positions? available)[^.]{0,80}(student|ph\.?d|masc|msc|assistantship)',re.I)
+for p in d['professors']:
+    if not (p.get('s') and p.get('w')): continue
+    try: txt=get(p['w'])
+    except Exception: p['check']='fetch failed'; continue
+    p['rec']=T.isoformat() if REC.search(txt) else None; p['checked']=T.isoformat()
 d['meta']['updated']=T.isoformat()
 json.dump(d,open(F,'w'),ensure_ascii=False,separators=(',',':'))
