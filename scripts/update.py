@@ -52,5 +52,18 @@ for p in d['professors']:
     try: txt=get(p['w'])
     except Exception: p['check']='fetch failed'; continue
     p['rec']=T.isoformat() if REC.search(txt) else None; p['checked']=T.isoformat()
+import xml.etree.ElementTree as ET
+try: JF=json.load(open('docs/jobs.json')).get('_feeds',[])
+except Exception: JF=[]
+posts=[]
+for f in JF:
+    try:
+        r=urllib.request.Request(f['url'],headers={'User-Agent':'Mozilla/5.0 masters-tracker'}); root=ET.fromstring(urllib.request.urlopen(r,timeout=25).read())
+        for it in (root.findall('.//item') or root.findall('.//{http://www.w3.org/2005/Atom}entry'))[:15]:
+            g=lambda t:(it.findtext(t) or it.findtext('{http://www.w3.org/2005/Atom}'+t) or '').strip()
+            l=g('link') or (it.find('{http://www.w3.org/2005/Atom}link') is not None and it.find('{http://www.w3.org/2005/Atom}link').get('href')) or ''
+            posts.append(dict(title=g('title'),link=l,date=(g('pubDate') or g('updated'))[:16],src=f['name']))
+    except Exception: pass
+d['jobfeed']=posts
 d['meta']['updated']=T.isoformat()
 json.dump(d,open(F,'w'),ensure_ascii=False,separators=(',',':'))
