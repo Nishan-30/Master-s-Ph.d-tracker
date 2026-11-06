@@ -147,7 +147,7 @@ function delTk(i){TK.splice(i,1);sv('tk',TK);draw()}
 function tgDoc(k,d,v){(DC[k]=DC[k]||{})[d]=v;sv('dc',DC);draw()}
 mot();
 </script><script>const ac=LS.g('accent');if(ac)document.documentElement.style.setProperty('--bl',ac);
-const TABS=[['timeline','Deadlines'],['programs','Universities'],['sch','Scholarships'],['profs','Professors'],['countries','Countries and jobs'],['checkin','Check-in'],['progress','My progress'],['tasks','Tasks and documents'],['compare','Compare'],['writing','Writing hub'],['network','Outreach'],['money','Money'],['plan','Plan and review'],['well','Wellbeing']];
+const TABS=[['timeline','Deadlines'],['programs','Universities'],['sch','Scholarships'],['profs','Professors'],['countries','Countries and jobs'],['checkin','Check-in'],['progress','My progress'],['tasks','Tasks and documents'],['compare','Compare'],['writing','Writing hub'],['wp','Writing practice'],['network','Outreach'],['money','Money'],['plan','Plan and review'],['well','Wellbeing']];
 NEW.push('compare','writing','network','money','plan','well');
 let TG=LS.g('tg')||{},CMP=LS.g('cmp')||[0,1],RT=LS.g('rt')||{},WT=LS.g('wt')||{fit:30,fund:25,loc:20,rank:15,cost:10},PH=[];
 const FD={},LL=k=>LS.g('x_'+k)||[],ok=u=>/^https?:\/\//.test(u||''),go=k=>{tab=k;page=1;render()};
@@ -225,12 +225,13 @@ const _mot=mot;mot=function(){_mot();const e=$('#mot'),b=LL('bo'),lb=b[b.length-
 mot();
 </script><script>/* ===== polish round: nav, check-in ritual, dashboard, emotional design ===== */
 const PRIM=[['timeline','Deadlines'],['programs','Universities'],['profs','Professors'],['checkin','Check-in'],['progress','Progress'],['more','More']];
-const MORE=[['sch','Scholarships','Funding options and deadlines'],['countries','Countries and jobs','Job search links by country'],['tasks','Tasks and documents','Kanban board and checklists'],['compare','Compare','Side-by-side programs and scores'],['writing','Writing hub','SOP, LOR and document vault'],['network','Outreach','Emails, notes and templates'],['money','Money','Costs, fees and funding odds'],['plan','Plan and review','Roadmap, heatmap, weekly review'],['well','Wellbeing','Stress check, wins and rest']];
-NEW.push('more');
+const MORE=[['sch','Scholarships','Funding options and deadlines'],['countries','Countries and jobs','Job search links by country'],['tasks','Tasks and documents','Kanban board and checklists'],['compare','Compare','Side-by-side programs and scores'],['writing','Writing hub','SOP, LOR and document vault'],['wp','Writing practice','Timed writing, AI feedback, score graph'],['network','Outreach','Emails, notes and templates'],['money','Money','Costs, fees and funding odds'],['plan','Plan and review','Roadmap, heatmap, weekly review'],['well','Wellbeing','Stress check, wins and rest']];
+NEW.push('more','wp');
 const quiet=()=>!!LS.g('quiet'),dAgo=i=>{const d=new Date(todayS()+'T00:00');d.setDate(d.getDate()-i);return ds(d)};
 if(LS.g('dense'))document.documentElement.dataset.dense=1;
 $('#out').insertAdjacentHTML('beforebegin','<div id="crumb"></div>');
-const _r=render;render=function(){_r();fixNav()};
+let CD=todayS();
+const _r=render;render=function(){if(tab!='checkin')CD=todayS();_r();fixNav()};
 function fixNav(){$('#nav').innerHTML=PRIM.map(([k,l])=>`<button class="${tab===k||(k=='more'&&MORE.some(m=>m[0]==tab))?'on':''}" onclick="go('${k}')">${l}</button>`).join('');
  $('#crumb').innerHTML=MORE.some(m=>m[0]==tab)?'<a href="#" onclick="go(\'more\');return false">← More</a>':''}
 function toast(m){let t=$('#toast');if(!t){t=document.createElement('div');t.id='toast';t.className='toast';document.body.appendChild(t)}t.textContent=m;t.style.display='block';clearTimeout(t._h);t._h=setTimeout(()=>t.style.display='none',3200)}
@@ -239,10 +240,11 @@ function toggleQuiet(){sv('quiet',quiet()?0:1);mot();draw()}
 function toggleDense(){const r=document.documentElement;if(r.dataset.dense){delete r.dataset.dense;sv('dense',0)}else{r.dataset.dense=1;sv('dense',1)}draw()}
 /* check-in: 20-second ritual */
 function longest(){let b=0,c=0,p=null;Object.keys(CI).sort().forEach(d=>{c=p&&Math.round((new Date(d+'T00:00')-new Date(p+'T00:00'))/864e5)==1?c+1:1;b=Math.max(b,c);p=d});return b}
-PG.checkin=()=>{const t=todayS(),c=CI[t]||{};W={dl:[...(c.dl||[])],mood:c.mood||0};
+PG.checkin=()=>{const t=CD,c=CI[t]||{};W={dl:[...(c.dl||[])],mood:c.mood||0};
  UPL=[...D.programs.map(x=>({n:x.uni+' – '+x.prog,d:x.deadline})),...D.scholarships.filter(x=>x.fit!='No').map(x=>({n:x.name,d:x.deadline}))].filter(x=>x.d&&days(x.d)>=0&&days(x.d)<=30).sort((a,b)=>a.d.localeCompare(b.d));
- const yn=(CI[dAgo(1)]||{}).n;
- return`<div class="c" style="max-width:640px;margin:auto"><h3>How was today?</h3><div class="mu">${fmt(t)} · about 20 seconds</div>${yn?`<div><span class="warn">Yesterday’s target: ${esc(yn)}</span></div>`:''}
+ const pd=new Date(t+'T00:00');pd.setDate(pd.getDate()-1);const yn=(CI[ds(pd)]||{}).n;
+ const chips=Array.from({length:10},(_,i)=>{const d=dAgo(i),l=i?new Date(d+'T00:00').toLocaleDateString('en-GB',{day:'2-digit',month:'short'}):'Today';return`<button class="chip ${d==t?'on':''}" onclick="setCD('${d}')">${CI[d]?'✓ ':''}${l}</button>`}).join('');
+ return`<div class="c" style="max-width:640px;margin:auto"><h3>${t==todayS()?'How was today?':'How was '+fmt(t)+'?'}</h3><div class="mu">Pick any day to add or edit a check-in. A tick means it is already saved.</div><div class="row" style="margin:4px 0">${chips}<input type="date" class="ip" id="ci_d" max="${todayS()}" value="${t}" onchange="setCD(this.value)" title="Pick another date"></div>${yn?`<div><span class="warn">Yesterday’s target: ${esc(yn)}</span></div>`:''}
  <div class="row mood big" style="justify-content:center;margin:6px 0">${MOOD.map((e,i)=>`<button class="chip ${W.mood==i+1?'on':''}" onclick="setMood(this,${i+1})" aria-label="Mood ${i+1}">${e}</button>`).join('')}</div>
  <label class="f">Biggest win or main action today<input id="ci_b" value="${esc(c.b||'')}" placeholder="e.g. Finished SOP outline"></label>
  <label class="f">One target for tomorrow<input id="ci_n" value="${esc(c.n||'')}"></label>
@@ -252,13 +254,13 @@ PG.checkin=()=>{const t=todayS(),c=CI[t]||{};W={dl:[...(c.dl||[])],mood:c.mood||
  <div class="f">Deadlines coming up<div class="row">${UPL.map((x,i)=>`<button class="chip ${W.dl.includes(x.n)?'on':''}" onclick="tgDl(this,${i})">${esc(x.n)} · ${days(x.d)}d</button>`).join('')||'<span class="mu">None in the next 30 days</span>'}</div></div>
  <label class="f">Biggest blocker<textarea id="ci_k">${esc(c.k||'')}</textarea></label></div></details>
  <button class="chip on" style="padding:13px;font-weight:700;font-size:15px" onclick="saveCI()">Save check-in</button></div>`};
-function saveCI(){const v=i=>($('#'+i)||{value:''}).value,t=todayS(),prev=CI[t]||{},b=v('ci_b').trim(),old=prev.a!==undefined;
+function saveCI(){const v=i=>($('#'+i)||{value:''}).value,t=CD,prev=CI[t]||{},b=v('ci_b').trim(),old=prev.a!==undefined;
  CI[t]={a:old&&!$('#ci_a')?prev.a:Math.max(0,Math.min(5,+v('ci_a')||0)),m:Math.max(0,+v('ci_m')||0),b,k:v('ci_k'),n:v('ci_n').trim(),mood:W.mood,dl:W.dl};sv('ci',CI);
  let ws=false;if(b&&b!==prev.b){const a=LL('win');a.push({d:t,w:b});sv('x_win',a);ws=true}
  mot();const n=streak(),ms=[7,14,30,50,100].includes(n),low=W.mood&&W.mood<=2,EN=['Showing up is the whole game.','Small step, real progress.','Future you says thanks.','Steady beats fast.','One more day on the board.'],
  msg=ms?`🎉 ${n} days in a row. That is real discipline.`:low?'A tough day, logged honestly. That still counts. Be gentle with yourself tomorrow.':EN[n%EN.length],
  cf=ms?'<div class="cf">'+Array.from({length:18},(_,i)=>`<span style="left:${i*5.4+Math.random()*3}%;animation-delay:${(Math.random()*.6).toFixed(2)}s">${['🎉','✨','🎊','⭐'][i%4]}</span>`).join('')+'</div>':'';
- $('#out').innerHTML=`<div class="c" style="max-width:640px;margin:auto;text-align:center">${cf}<div class="mu">Check-in saved</div><div class="big">🔥 ${n}</div><div class="mu">day streak · longest ${longest()}</div><p>${msg}</p>${ws?'<div><span class="warn">Win added to your Win log</span></div>':''}${CI[t].n?`<p class="mu">Tomorrow: ${esc(CI[t].n)}</p>`:''}<button class="chip" onclick="draw()">Edit today</button></div>`}
+ $('#out').innerHTML=`<div class="c" style="max-width:640px;margin:auto;text-align:center">${cf}<div class="mu">Check-in saved${t==todayS()?'':' for '+fmt(t)}</div><div class="big">🔥 ${n}</div><div class="mu">day streak · longest ${longest()}</div><p>${msg}</p>${ws?'<div><span class="warn">Win added to your Win log</span></div>':''}${CI[t].n?`<p class="mu">Tomorrow: ${esc(CI[t].n)}</p>`:''}<button class="chip" onclick="draw()">Edit this day</button>${t==todayS()?'':' <button class="chip on" onclick="setCD(todayS())">Back to today</button>'}</div>`}
 /* progress dashboard */
 const wkS=o=>{let a=0,m=0,n=0,mo=[];for(let i=o*7;i<o*7+7;i++){const e=CI[dAgo(i)];if(e){n++;a+=+e.a||0;m+=+e.m||0;if(e.mood)mo.push(e.mood)}}return{a,m,n,mo:mo.length?+(mo.reduce((x,y)=>x+y)/mo.length).toFixed(1):'–'}};
 function dash(){const cnt=(p,v)=>Object.entries(mark).filter(([k,x])=>k[0]==p&&v.includes(x)).length,s0=wkS(0),s1=wkS(1),sh=cnt('p',['Shortlisted','Applying','Submitted','Admitted']),su=cnt('p',['Submitted','Admitted']),co=cnt('f',['Emailed','Replied','Interview']),re=cnt('f',['Replied','Interview']),pc=(a,b)=>b?Math.round(a/b*100)+'%':'–',ar=(x,y)=>typeof x!='number'||typeof y!='number'?'':x>y?'▲':x<y?'▼':'=',foc=[];
@@ -288,4 +290,95 @@ const TOP=[['Connected and automated vehicles','connected,automated,autonomous']
 function topics(){return`<div class="c" style="margin-bottom:16px"><h3>Trending transportation research topics</h3><div class="mu">A curated list, not a live feed. Tap a topic to rank professors by it. Every professor card has a Recent papers link.</div><div class="row">${TOP.map((t,i)=>`<button class="chip ${kw==t[1]?'on':''}" onclick="setTopic(${i})">${t[0]}</button>`).join('')}</div></div>`}
 function setTopic(i){kw=TOP[i][1];LS.s('kw',kw);render()}
 const _d=draw;draw=function(){_d();if(tab=='profs')$('#out').insertAdjacentHTML('afterbegin',topics())};
+</script><script>/* ===== Check-in date picker + Writing practice ===== */
+function setCD(v){if(!v||v>todayS()){toast('Pick today or an earlier date.');return}CD=v;draw()}
+const WTYPE={ielts:'IELTS Task 2 essay',sop:'SOP / motivation letter',mail:'Email to a professor',free:'Free writing'};
+const WTOP={
+ ielts:["Some people think public transport should be free. To what extent do you agree or disagree?","Traffic congestion is growing in big cities. What are the causes, and what solutions can you suggest?","Governments should spend more on roads than on public transport. Discuss both views and give your opinion.","More students now study abroad. Do the advantages outweigh the disadvantages?","Some people believe AI will replace engineers. Do you agree or disagree?","Private cars should be banned from city centres. Do the benefits outweigh the drawbacks?","Who should take more responsibility for climate change: individuals or governments?"],
+ sop:["Why I want to study transportation engineering","An experience that shaped my academic interests","Why this university and this professor’s research fit me","My short-term and long-term career goals","A challenge I faced and what I learned"],
+ mail:["Cold email to a professor about a funded PhD position","Follow-up email after 8 days without a reply","Email asking about an MS research assistantship","Thank-you email after a professor replied"],
+ free:["Describe your typical day","What did you learn this week?","Describe a place you want to live in and why","Explain a technical idea you know well in simple words"]};
+const CRK=[['task','Task'],['coh','Coherence'],['voc','Vocabulary'],['gra','Grammar']];
+let WPF=null,WPT=LS.g('x_wpt')||{s:0},wpTick=null;
+const wc=s=>(String(s||'').trim().match(/\S+/g)||[]).length;
+const wpFmt=s=>String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');
+const wpL=()=>LL('wpl').slice().sort((a,b)=>a.d.localeCompare(b.d)||a.id-b.id);
+function wpDraft(){if($('#wp_x'))return{topic:$('#wp_tp').value,type:$('#wp_ty').value,lim:$('#wp_li').value,text:$('#wp_x').value};return LS.g('x_wpd')||{}}
+function wpPrompt(e){return "You are an expert IELTS writing examiner and academic English coach. Evaluate the student response below strictly and honestly.\n\nTask type: "+(WTYPE[e.type]||e.type)+"\nTopic: "+e.topic+"\nWord count: "+e.words+" (target 200-300)\nTime taken: "+wpFmt(e.secs)+"\n\nStudent text:\n\"\"\"\n"+e.text+"\n\"\"\"\n\nReply ONLY with valid JSON in exactly this format, no extra text:\n{\"overall\":6.5,\"task\":6,\"coherence\":6.5,\"vocab\":6,\"grammar\":6.5,\"strengths\":[\"...\"],\"improvements\":[\"...\"],\"corrected\":\"an improved version of the text\"}\n\nRules: scores are 0-9 in 0.5 steps (IELTS bands: task response, coherence and cohesion, lexical resource, grammatical range and accuracy). Give 2-3 strengths and 3-5 improvements. Every improvement must be specific, actionable and quote a real example from the text."}
+function wpUpd(){const x=$('#wp_x');if(!x)return;const w=wc(x.value),e=$('#wp_wc');e.textContent=w;e.style.color=w>=200&&w<=300?'var(--gr)':w>300?'var(--er)':'var(--tx)';$('#wp_wh').textContent=w<200?'(need '+(200-w)+' more)':w>300?'('+(w-300)+' over)':'(in range)';const t=$('#wp_t'),lim=(+$('#wp_li').value||0)*60;t.textContent=wpFmt(WPT.s);t.style.color=lim&&WPT.s>lim?'var(--er)':'var(--gr)';$('#wp_b').textContent=wpTick?'Pause':(WPT.s?'Resume':'Start')}
+function wpStart(){if(wpTick)return;wpTick=setInterval(()=>{if(!$('#wp_t')){wpPause();return}WPT.s++;if(WPT.s%5==0)sv('x_wpt',WPT);wpUpd()},1000);wpUpd()}
+function wpPause(){clearInterval(wpTick);wpTick=null;sv('x_wpt',WPT);wpUpd()}
+function wpReset(){clearInterval(wpTick);wpTick=null;WPT={s:0};sv('x_wpt',WPT);wpUpd()}
+function wpToggle(){wpTick?wpPause():wpStart()}
+function wpInput(){const d=wpDraft();sv('x_wpd',d);wpUpd();if(!wpTick&&!WPT.s&&d.text.trim())wpStart()}
+function wpType(){sv('x_wpd',wpDraft())}
+function wpRandom(){const ty=$('#wp_ty').value,a=WTOP[ty];$('#wp_tp').value=a[Math.floor(Math.random()*a.length)];wpInput()}
+function wpSubmit(){const d=wpDraft(),w=wc(d.text);if(!d.text.trim()){toast('Write something first.');return}
+ if((w<200||w>300)&&!confirm('You wrote '+w+' words (target 200-300). Submit anyway?'))return;
+ wpPause();const a=LL('wpl'),id=Date.now();a.push({id,d:$('#wp_d').value||todayS(),topic:d.topic||'(no topic)',type:d.type||'ielts',text:d.text,words:w,secs:WPT.s});sv('x_wpl',a);
+ sv('x_wpd',{type:d.type,lim:d.lim,topic:'',text:''});WPT={s:0};sv('x_wpt',WPT);WPF=id;draw();scrollTo(0,0);toast('Saved. Now get feedback.')}
+function wpFb(id){WPF=id;draw();scrollTo(0,0)}
+function wpCancel(){WPF=null;draw()}
+function wpDel(id){if(!confirm('Delete this entry?'))return;sv('x_wpl',LL('wpl').filter(e=>e.id!=id));if(WPF==id)WPF=null;draw()}
+function wpRetry(id){const e=LL('wpl').find(x=>x.id==id);if(!e)return;wpReset();sv('x_wpd',{type:e.type,lim:(LS.g('x_wpd')||{}).lim||'0',topic:e.topic,text:''});WPF=null;draw();scrollTo(0,0)}
+function wpCopy(id){const e=LL('wpl').find(x=>x.id==id);if(!e)return;const t=wpPrompt(e);
+ const fb=()=>{const z=document.createElement('textarea');z.value=t;document.body.appendChild(z);z.select();try{document.execCommand('copy');toast('Prompt copied. Paste it in your AI chat.')}catch(_){toast('Copy failed.')}z.remove()};
+ if(navigator.clipboard)navigator.clipboard.writeText(t).then(()=>toast('Prompt copied. Paste it in your AI chat.')).catch(fb);else fb()}
+function wpParse(s){const a=s.indexOf('{'),b=s.lastIndexOf('}');if(a<0||b<a)return null;try{return JSON.parse(s.slice(a,b+1))}catch(e){return null}}
+function wpFill(){const j=wpParse($('#fb_p').value);if(!j){toast('Could not read the reply. Fill the fields by hand.');return}
+ const set=(i,v)=>{if(v!=null&&v!=='')$('#'+i).value=Array.isArray(v)?v.join('\n'):v};
+ set('fb_o',j.overall);set('fb_t',j.task);set('fb_c',j.coherence);set('fb_v',j.vocab);set('fb_g',j.grammar);set('fb_s',j.strengths);set('fb_i',j.improvements);set('fb_x',j.corrected);toast('Filled. Check it, then press Save rating.')}
+function wpSaveFb(id){const a=LL('wpl'),e=a.find(x=>x.id==id);if(!e)return;
+ const n=i=>{const v=$('#'+i).value;return v===''?'':Math.max(0,Math.min(9,+v))};
+ const cr={task:n('fb_t'),coh:n('fb_c'),voc:n('fb_v'),gra:n('fb_g')};let o=n('fb_o');const vals=Object.values(cr).filter(v=>v!=='');
+ if(o===''&&vals.length)o=Math.round(vals.reduce((s,v)=>s+v,0)/vals.length*2)/2;
+ if(o===''){toast('Enter an overall score first.');return}
+ const ln=i=>$('#'+i).value.split('\n').map(s=>s.trim()).filter(Boolean);
+ Object.assign(e,{score:o,cr,str:ln('fb_s'),imp:ln('fb_i'),cor:$('#fb_x').value.trim()});sv('x_wpl',a);WPF=null;draw();toast('Rating saved')}
+
+PG.wp=()=>{const dr=LS.g('x_wpd')||{},ty=dr.type||'ielts',L=wpL(),R=L.filter(e=>e.score!=null),
+ tot=L.reduce((s,e)=>s+e.words,0),avg=R.length?(R.reduce((s,e)=>s+e.score,0)/R.length).toFixed(1):'–',best=R.length?Math.max(...R.map(e=>e.score)):'–',
+ delta=R.length>1?(R[R.length-1].score-R[0].score):null,last=R.slice(-5),
+ cs=CRK.map(([k,l])=>{const v=last.filter(e=>e.cr&&e.cr[k]!==''&&e.cr[k]!=null);return v.length?[l,v.reduce((s,e)=>s+ +e.cr[k],0)/v.length]:null}).filter(Boolean).sort((a,b)=>a[1]-b[1]),
+ K=[[L.length,'entries'],[avg,'average score'],[best,'best score'],[delta==null?'–':(delta>0?'+':'')+delta.toFixed(1),'change since first'],[tot,'words written'],[cs.length?cs[0][0]:'–','weakest area (last 5)']],
+ fe=L.find(e=>e.id==WPF),cr=fe?fe.cr||{}:{};
+ const fbCard=fe?`<div class="c" style="margin-bottom:16px;border-color:var(--bl)"><h3>Feedback: ${esc(fe.topic)}</h3><div class="mu">${fe.words} words · ${wpFmt(fe.secs)} · ${fmt(fe.d)}</div>
+ <div class="mu"><b>Step 1.</b> Copy the prompt and paste it in any AI chat. <b>Step 2.</b> Paste the AI reply below and auto-fill.</div>
+ <div class="row"><button class="chip on" onclick="wpCopy(${fe.id})">Copy AI prompt</button><a class="chip" href="https://chatgpt.com/" target="_blank" rel="noopener">Open ChatGPT</a><a class="chip" href="https://claude.ai/new" target="_blank" rel="noopener">Open Claude</a><a class="chip" href="https://gemini.google.com/" target="_blank" rel="noopener">Open Gemini</a></div>
+ <label class="f">AI reply (JSON)<textarea id="fb_p" style="min-height:90px" placeholder="Paste the AI reply here"></textarea></label>
+ <div><button class="chip" onclick="wpFill()">Auto-fill from reply</button></div>
+ <div class="row"><label class="f">Overall (0-9)<input id="fb_o" class="ip" type="number" min="0" max="9" step="0.5" style="width:90px" value="${fe.score??''}"></label>
+ <label class="f">Task<input id="fb_t" class="ip" type="number" min="0" max="9" step="0.5" style="width:80px" value="${cr.task??''}"></label>
+ <label class="f">Coherence<input id="fb_c" class="ip" type="number" min="0" max="9" step="0.5" style="width:80px" value="${cr.coh??''}"></label>
+ <label class="f">Vocabulary<input id="fb_v" class="ip" type="number" min="0" max="9" step="0.5" style="width:80px" value="${cr.voc??''}"></label>
+ <label class="f">Grammar<input id="fb_g" class="ip" type="number" min="0" max="9" step="0.5" style="width:80px" value="${cr.gra??''}"></label></div>
+ <label class="f">Strengths (one per line)<textarea id="fb_s">${esc((fe.str||[]).join('\n'))}</textarea></label>
+ <label class="f">Things to improve (one per line)<textarea id="fb_i" style="min-height:90px">${esc((fe.imp||[]).join('\n'))}</textarea></label>
+ <label class="f">Improved version (optional)<textarea id="fb_x" style="min-height:90px">${esc(fe.cor||'')}</textarea></label>
+ <div class="row"><button class="chip on" onclick="wpSaveFb(${fe.id})">Save rating</button><button class="chip" onclick="wpCancel()">Rate later</button></div></div>`:'';
+ const writeCard=`<div class="c" style="margin-bottom:16px"><h3>Write</h3>
+ <div class="row"><select id="wp_ty" class="ip" onchange="wpType()">${Object.entries(WTYPE).map(([k,v])=>`<option value="${k}" ${k==ty?'selected':''}>${v}</option>`).join('')}</select>
+ <input id="wp_d" type="date" class="ip" max="${todayS()}" value="${todayS()}" title="Date of this writing">
+ <select id="wp_li" class="ip" title="Time limit" onchange="wpType();wpUpd()">${[['0','No time limit'],['20','20 min'],['30','30 min'],['40','40 min'],['60','60 min']].map(([v,l])=>`<option value="${v}" ${v==(dr.lim||'0')?'selected':''}>${l}</option>`).join('')}</select>
+ <button class="chip" onclick="wpRandom()">Random topic</button></div>
+ <label class="f">Topic<input id="wp_tp" class="ip" value="${esc(dr.topic||'')}" placeholder="Type a topic or press Random topic" oninput="wpInput()"></label>
+ <label class="f">Your writing (target 200-300 words)<textarea id="wp_x" style="min-height:240px" oninput="wpInput()" placeholder="Start typing. The timer starts automatically.">${esc(dr.text||'')}</textarea></label>
+ <div class="row" style="justify-content:space-between"><span><b id="wp_wc">0</b> words <span class="mu" id="wp_wh"></span></span><span class="d" id="wp_t" style="font-size:24px">00:00</span></div>
+ <div class="row"><button class="chip" id="wp_b" onclick="wpToggle()">Start</button><button class="chip" onclick="wpReset()">Reset timer</button><button class="chip on" onclick="wpSubmit()">Submit</button></div>
+ <div class="mu">Your draft is saved automatically in this browser.</div></div>`;
+ const charts=R.length?`<div class="g" style="margin-bottom:16px"><div class="c"><h3>Score trend</h3><div class="cv"><canvas id="wc1"></canvas></div></div><div class="c"><h3>Words per minute</h3><div class="cv"><canvas id="wc2"></canvas></div></div></div>`:`<div class="c" style="margin-bottom:16px"><h3>Score trend</h3><div class="empty">Rate your first entry to see your improvement graph.</div></div>`;
+ const hist=L.slice().reverse().map(e=>{const crl=CRK.filter(([k])=>e.cr&&e.cr[k]!==''&&e.cr[k]!=null).map(([k,l])=>l+' '+e.cr[k]).join(' · ');
+  return`<div class="c"><div class="row"><span class="b Soon">${esc(WTYPE[e.type]||e.type)}</span>${e.score!=null?`<span class="b Open">Score ${e.score}</span>`:'<span class="warn">Not rated yet</span>'}<span class="mu">${fmt(e.d)}</span></div><h3>${esc(e.topic)}</h3>
+  <div class="mu">${e.words} words · ${wpFmt(e.secs)} · ${e.secs?Math.round(e.words/(e.secs/60)):0} words/min</div>${crl?`<div class="mu">${crl}</div>`:''}
+  ${e.imp&&e.imp.length?`<div><b>Things to improve</b><ul>${e.imp.map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div>`:''}
+  ${e.str&&e.str.length?`<div><b>Strengths</b><ul>${e.str.map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div>`:''}
+  <details><summary class="mu" style="cursor:pointer">My text${e.cor?' and improved version':''}</summary><p style="white-space:pre-wrap">${esc(e.text)}</p>${e.cor?`<b>Improved version</b><p style="white-space:pre-wrap">${esc(e.cor)}</p>`:''}</details>
+  <div class="row"><button class="chip" onclick="wpFb(${e.id})">${e.score!=null?'Edit feedback':'Add feedback'}</button><button class="chip" onclick="wpRetry(${e.id})">Write again</button><button class="chip" onclick="wpDel(${e.id})">Delete</button></div></div>`}).join('');
+ return fbCard+`<div class="kp" style="margin:0 0 16px">${K.map(([n,l])=>`<div><b>${n}</b>${l}</div>`).join('')}</div>`+writeCard+charts+`<h3 style="font-family:Georgia,serif">History</h3><div class="g">${hist||'<div class="empty">No writing yet. Write your first piece above.</div>'}</div>`};
+AF.wp=()=>{wpUpd();CH.forEach(c=>c.destroy());CH=[];const R=wpL().filter(e=>e.score!=null);if(!R.length||typeof Chart=='undefined'||!$('#wc1'))return;
+ const css=v=>getComputedStyle(document.documentElement).getPropertyValue(v).trim(),gr=css('--gr'),bl=css('--bl'),er=css('--er'),wa=css('--wa');Chart.defaults.color=css('--mu');Chart.defaults.borderColor=css('--bd');
+ const L=R.map(e=>e.d.slice(5)),ds=(l,k,c)=>({label:l,data:R.map(e=>e.cr&&e.cr[k]!==''&&e.cr[k]!=null?+e.cr[k]:null),borderColor:c,backgroundColor:c,tension:.3,borderDash:[4,3],spanGaps:true,pointRadius:2});
+ CH.push(new Chart($('#wc1'),{type:'line',data:{labels:L,datasets:[{label:'Overall',data:R.map(e=>e.score),borderColor:gr,backgroundColor:gr,tension:.3,borderWidth:3},ds('Task','task',bl),ds('Coherence','coh',wa),ds('Vocabulary','voc',er),ds('Grammar','gra','#8aa0aa')]},options:{responsive:true,maintainAspectRatio:false,scales:{y:{suggestedMin:3,max:9}}}}));
+ CH.push(new Chart($('#wc2'),{type:'bar',data:{labels:L,datasets:[{label:'Words per minute',data:R.map(e=>e.secs?Math.round(e.words/(e.secs/60)):0),backgroundColor:bl}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true}}}}))};
+const _pw=PG.writing;PG.writing=()=>`<div class="c" style="cursor:pointer;margin-bottom:16px" onclick="go('wp')"><h3>Writing practice →</h3><div class="mu">Timed writing, AI feedback, score graph</div></div>`+_pw();
 </script></body></html>
